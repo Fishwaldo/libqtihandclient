@@ -10,7 +10,7 @@ VERSION = 0.1.0
 
 TARGET = qtihanclient
 TEMPLATE = lib
-CONFIG += lib_bundle c++11 shared link_pkgconfig create_pc create_prl no_install_prl
+CONFIG += lib_bundle c++11 shared link_pkgconfig create_pc create_prl no_install_prl silent
 
 !isEmpty(IHANCLIENTPATH) {
 	#message($$IHANCLIENTPATH/include/iHanClient/MsgTypes.hpp)
