@@ -6,9 +6,12 @@
 
 QT       += core gui widgets
 
-VERSION = 0.1.0
 
-TARGET = qtihanclient
+include (qtihanclientconfig.pri)
+
+
+
+TARGET = qt$${QT_MAJOR_VERSION}ihanclient
 TEMPLATE = lib
 CONFIG += lib_bundle c++11 shared link_pkgconfig create_pc create_prl no_install_prl silent
 
@@ -28,6 +31,10 @@ CONFIG += lib_bundle c++11 shared link_pkgconfig create_pc create_prl no_install
 
 include (libqtihanclient.pri)
 
+target.path = $${QIC_INSTALL_LIBS}
+headers.files = $${HEADERS}
+headers.path = $${QIC_INSTALL_HEADERS}
+
 QMAKE_PKGCONFIG_NAME = libQTiHanClient
 QMAKE_PKGCONFIG_DESCRIPTION = Qt bindings for the iHanClient Library
 QMAKE_PKGCONFIG_PREFIX = $$INSTALLBASE
@@ -36,3 +43,6 @@ QMAKE_PKGCONFIG_INCDIR = $$headers.path
 QMAKE_PKGCONFIG_VERSION = $$VERSION
 
 
+
+
+INSTALLS += target headers
