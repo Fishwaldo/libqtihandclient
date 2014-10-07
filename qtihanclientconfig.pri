@@ -12,9 +12,9 @@ isEmpty(QIC_VER_PAT) {
 VERSION      = $${QIC_VER_MAJ}.$${QIC_VER_MIN}.$${QIC_VER_PAT}
 
 isEmpty(DOCDIR) {
-	QIC_INSTALL_DOCS      = $${PREFIX}/share/doc/QtiHanClient-$${VERSION}/
+	QIC_INSTALL_DOCS      = $${PREFIX}/share/doc/Qt$${QT_MAJOR_VERSION}iHanClient-$${VERSION}/
 } else {
-	QIC_INSTALL_DOCS	  = $${DOCDIR}/QtiHanClient-$${VERSION}
+	QIC_INSTALL_DOCS	  = $${DOCDIR}/Qt$${QT_MAJOR_VERSION}iHanClient-$${VERSION}
 }	 
 isEmpty(INCDIR) {
 	QIC_INSTALL_HEADERS   = $${PREFIX}/include/qt$${QT_MAJOR_VERSION}/QtiHanClient
