@@ -35,6 +35,10 @@ target.path = $${QIC_INSTALL_LIBS}
 headers.files = $${HEADERS}
 headers.path = $${QIC_INSTALL_HEADERS}
 
+docs.path = $${QIC_INSTALL_DOCS}
+docs.files = README AUTHORS ChangeLog COPYING NEWS
+
+
 QMAKE_PKGCONFIG_NAME = libQTiHanClient
 QMAKE_PKGCONFIG_DESCRIPTION = Qt bindings for the iHanClient Library
 QMAKE_PKGCONFIG_PREFIX = $$INSTALLBASE
@@ -45,4 +49,4 @@ QMAKE_PKGCONFIG_VERSION = $$VERSION
 
 
 
-INSTALLS += target headers
+INSTALLS += target headers docs
