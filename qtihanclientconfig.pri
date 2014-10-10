@@ -18,8 +18,10 @@ isEmpty(DOCDIR) {
 }	 
 isEmpty(INCDIR) {
 	QIC_INSTALL_HEADERS   = $${PREFIX}/include/qt$${QT_MAJOR_VERSION}/QtiHanClient
+	QIC_HEADERS_PATH      = $${PREFIX}/include/qt$${QT_MAJOR_VERSION}
 } else {
-	QIC_INSTALL_HEADERS	  = $${INCDIR}/qt$${QT_MAJOR_VERSION}/QtiHanClient
+	QIC_INSTALL_HEADERS	= $${INCDIR}/qt$${QT_MAJOR_VERSION}/QtiHanClient
+	QIC_HEADERS_PATH      	= $${INCDIR}/qt$${QT_MAJOR_VERSION}
 }
 isEmpty(LIBDIR) {
 	QIC_INSTALL_LIBS      = $${PREFIX}/lib64/
