@@ -9,6 +9,7 @@
 #include <QtCore/QAbstractListModel>
 #include <QtCore/QStringList>
 #include <QtCore/QDebug>
+#include "QtiHanClientDefs.h"
 #include "iHanClient/varcontainer.hpp"
 #include "iHanClient/MessageBus.hpp"
 #include "iHanClient/MsgTypes.hpp"
@@ -35,7 +36,7 @@ private:
 };
 
 
-class DeviceModel_t : public QAbstractItemModel {
+class QTIHANCLIENT_EXPORT DeviceModel_t : public QAbstractItemModel {
     Q_OBJECT
 public:
     enum DeviceRoles {
@@ -97,7 +98,7 @@ typedef QMap<int, QString> VarList_t;
 Q_DECLARE_METATYPE(DeviceModel_t*)
 Q_DECLARE_METATYPE(VarList_t);
 
-class VarStorageElement: public QObject {
+class QTIHANCLIENT_EXPORT VarStorageElement: public QObject {
 	Q_OBJECT
 public:
 	VarStorageElement() {};
@@ -358,7 +359,7 @@ public:
 		VarStorage var;
 };
 
-class VarStorageHelper_t {
+class QTIHANCLIENT_EXPORT VarStorageHelper_t {
 public:
 	VarStorageHelper_t(VarStorage value, VarStorage descriptor, QString Serial);
 	~VarStorageHelper_t();

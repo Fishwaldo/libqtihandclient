@@ -20,11 +20,12 @@
 #include "iHanClient/varcontainer.hpp"
 #include "iHanClient/MessageBus.hpp"
 #include "iHanClient/MsgTypes.hpp"
+#include "QtiHanClientDefs.h"
 class QTcpDataIO;
 
 typedef enum State_e {S_DISCONNECTED, S_CONNECTED, S_READY} State_e;
 
-class MessageHandler : public QObject, public muscle::AbstractGatewayMessageReceiver
+class QTIHANCLIENT_EXPORT MessageHandler : public QObject, public muscle::AbstractGatewayMessageReceiver
 {
 	Q_OBJECT
 public:

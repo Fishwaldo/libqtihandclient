@@ -35,7 +35,9 @@
 #include <QtiHanClient/kdescendantsproxymodel.h>
 #include <QtiHanClient/modeltest.h>
 
-class QtiHanClient : public QObject {
+#include "QtiHanClientDefs.h"
+
+class QTIHANCLIENT_EXPORT QtiHanClient : public QObject {
     Q_OBJECT
 public:
 
