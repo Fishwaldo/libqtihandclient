@@ -27,7 +27,7 @@
 #ifndef QTIHANCLIENTDEF_H_
 #define QTIHANCLIENTDEF_H_
 
-#include <QtCore\QtGlobal>
+#include <QtGlobal>
 
 
 #if (defined _WINDOWS || defined WIN32 || defined _MSC_VER) && !defined MINGW

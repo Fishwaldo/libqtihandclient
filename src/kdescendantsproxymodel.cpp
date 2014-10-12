@@ -28,8 +28,13 @@
 
 #define KDO(object) qDebug() << #object << object
 
+#include "QtiHanClient/kbihash_p.h"
 
-KDescendantsProxyModelPrivate::KDescendantsProxyModelPrivate(KDescendantsProxyModel *qq)
+typedef KHash2Map<QPersistentModelIndex, int> Mapping;
+
+class KDescendantsProxyModelPrivate
+{
+    KDescendantsProxyModelPrivate(KDescendantsProxyModel *qq)
         : q_ptr(qq),
           m_rowCount(0),
           m_ignoreNextLayoutAboutToBeChanged(false),
@@ -40,6 +45,48 @@ KDescendantsProxyModelPrivate::KDescendantsProxyModelPrivate(KDescendantsProxyMo
     {
     }
 
+    Q_DECLARE_PUBLIC(KDescendantsProxyModel)
+    KDescendantsProxyModel *const q_ptr;
+
+    mutable QVector<QPersistentModelIndex> m_pendingParents;
+
+    void scheduleProcessPendingParents() const;
+    void processPendingParents();
+
+    void synchronousMappingRefresh();
+
+    void updateInternalIndexes(int start, int offset);
+
+    void resetInternalData();
+
+    void sourceRowsAboutToBeInserted(const QModelIndex &, int, int);
+    void sourceRowsInserted(const QModelIndex &, int, int);
+    void sourceRowsAboutToBeRemoved(const QModelIndex &, int, int);
+    void sourceRowsRemoved(const QModelIndex &, int, int);
+    void sourceRowsAboutToBeMoved(const QModelIndex &, int, int, const QModelIndex &, int);
+    void sourceRowsMoved(const QModelIndex &, int, int, const QModelIndex &, int);
+    void sourceModelAboutToBeReset();
+    void sourceModelReset();
+    void sourceLayoutAboutToBeChanged();
+    void sourceLayoutChanged();
+    void sourceDataChanged(const QModelIndex &, const QModelIndex &);
+    void sourceModelDestroyed();
+
+    Mapping m_mapping;
+    int m_rowCount;
+    QPair<int, int> m_removePair;
+    QPair<int, int> m_insertPair;
+
+    bool m_ignoreNextLayoutAboutToBeChanged;
+    bool m_ignoreNextLayoutChanged;
+    bool m_relayouting;
+
+    bool m_displayAncestorData;
+    QString m_ancestorSeparator;
+
+    QList<QPersistentModelIndex> m_layoutChangePersistentIndexes;
+    QModelIndexList m_proxyIndexes;
+};
 
 void KDescendantsProxyModelPrivate::resetInternalData()
 {

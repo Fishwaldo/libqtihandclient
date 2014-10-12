@@ -21,10 +21,11 @@
 #define KDESCENDANTSPROXYMODEL_P_H
 
 #include <QAbstractProxyModel>
-
-#include "QtiHanClient/kbihash_p.h"
-#include "kitemmodels_export.h"
 #include "QtiHanClientDefs.h"
+
+class KDescendantsProxyModelPrivate;
+
+#include "kitemmodels_export.h"
 
 /**
 @brief Proxy Model for restructuring a Tree into a list.
@@ -66,59 +67,6 @@ view->setModel(descProxy);
 @since 4.6
 @author Stephen Kelly <steveire@gmail.com>
 */
-
-typedef KHash2Map<QPersistentModelIndex, int> Mapping;
-class KDescendantsProxyModel;
-
-class KDescendantsProxyModelPrivate
-{
-	KDescendantsProxyModelPrivate(KDescendantsProxyModel *qq);
-
-    Q_DECLARE_PUBLIC(KDescendantsProxyModel)
-    KDescendantsProxyModel *const q_ptr;
-
-    mutable QVector<QPersistentModelIndex> m_pendingParents;
-
-    void scheduleProcessPendingParents() const;
-    void processPendingParents();
-
-    void synchronousMappingRefresh();
-
-    void updateInternalIndexes(int start, int offset);
-
-    void resetInternalData();
-
-    void sourceRowsAboutToBeInserted(const QModelIndex &, int, int);
-    void sourceRowsInserted(const QModelIndex &, int, int);
-    void sourceRowsAboutToBeRemoved(const QModelIndex &, int, int);
-    void sourceRowsRemoved(const QModelIndex &, int, int);
-    void sourceRowsAboutToBeMoved(const QModelIndex &, int, int, const QModelIndex &, int);
-    void sourceRowsMoved(const QModelIndex &, int, int, const QModelIndex &, int);
-    void sourceModelAboutToBeReset();
-    void sourceModelReset();
-    void sourceLayoutAboutToBeChanged();
-    void sourceLayoutChanged();
-    void sourceDataChanged(const QModelIndex &, const QModelIndex &);
-    void sourceModelDestroyed();
-
-    Mapping m_mapping;
-    int m_rowCount;
-    QPair<int, int> m_removePair;
-    QPair<int, int> m_insertPair;
-
-    bool m_ignoreNextLayoutAboutToBeChanged;
-    bool m_ignoreNextLayoutChanged;
-    bool m_relayouting;
-
-    bool m_displayAncestorData;
-    QString m_ancestorSeparator;
-
-    QList<QPersistentModelIndex> m_layoutChangePersistentIndexes;
-    QModelIndexList m_proxyIndexes;
-};
-
-
-
 class QTIHANCLIENT_EXPORT KDescendantsProxyModel : public QAbstractProxyModel
 {
     Q_OBJECT
