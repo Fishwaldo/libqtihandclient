@@ -233,8 +233,8 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 		StoredType_t newtype = newvals->getType(newfields->at(i));
 		if (newtype != vals->getType(newfields->at(i))) {
 			/* values do not match type */
-			cout << newtype << vals->getType(newfields->at(i)) << std::endl;
 			qWarning() << "Updated Field is not the same type as existing field";
+			qWarning() << "NewType: " << newtype << " Existing Type: " << vals->getType(newfields->at(i));
 			continue;
 		}
 		for (unsigned int j = 0; j < newvals->getSize(newfields->at(i)); j++) {
@@ -411,7 +411,7 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 
 	qDebug() << "Updated Fields:";
 	for (int i = 0; i < updatedfields.size(); i++) {
-		std::cout << qPrintable(updatedfields.at(i)) << std::endl;
+		qDebug() << qPrintable(updatedfields.at(i));
 	}
 
 	//newvals->addStringValue(SRVCAP_ENDPT_SERIAL, deviceID);
@@ -465,8 +465,8 @@ void QtiHanClient::HandleDeviceConfigUpdate(MessageBus msg) {
 		StoredType_t newtype = newvals->getType(newfields->at(i));
 		if (newtype != vals->getType(newfields->at(i))) {
 			/* values do not match type */
-			//cout << newtype << vals->getType(newfields->at(i)) << std::endl;
 			qWarning() << "Updated Field is not the same type as existing field";
+			qWarning() << "NewType: " << newtype << " Existing Type: " << vals->getType(newfields->at(i));
 			continue;
 		}
 		for (unsigned int j = 0 ; j < newvals->getSize(newfields->at(i)); j++ ) {
@@ -643,7 +643,7 @@ void QtiHanClient::HandleDeviceConfigUpdate(MessageBus msg) {
 
 	qDebug() << "Updated Config Fields:";
 	for (int i = 0; i < updatedfields.size(); i++) {
-		std::cout << qPrintable(updatedfields.at(i)) << std::endl;
+		qDebug() << qPrintable(updatedfields.at(i));
 	}
 
 	//newvals->addStringValue(SRVCAP_ENDPT_SERIAL, deviceID);
@@ -691,7 +691,7 @@ void QtiHanClient::HandleTermTypeMappings(MessageBus msg) {
 			std::map<std::string, HashValsVariant_t>::const_iterator hvit;
 			for (hvit = VarValues.begin(); hvit != VarValues.end(); hvit++) {
 				QTermVars.insert((*hvit).first.c_str(), QVariant(boost::get<std::string>((*hvit).second).c_str()));
-				cout << "\t\t" << (*hvit).first.c_str() << std::endl;
+				//cout << "\t\t" << (*hvit).first.c_str() << std::endl;
 			}
 			QTermVals.insert((*TermIter).c_str(), QTermVars);
 		}

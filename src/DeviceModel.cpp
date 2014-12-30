@@ -744,7 +744,7 @@ QVariant VarStorageHelper_t::getValue(QString name, int pos) {
 			} else if (this->values->getType(names[i].toStdString()) == ST_VARSTORAGE) {
 				val->getVarStorageValue(names[i].toStdString(), val);
 			} else {
-				cout << "its something else " << std::endl;
+				//cout << "its something else " << std::endl;
 				if (i == names.count() - 1) {
 					/* the last entry should always be a normal value,
 					 * not a container

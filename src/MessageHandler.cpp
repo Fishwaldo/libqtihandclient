@@ -207,7 +207,7 @@ void MessageHandler::processSensorUpdate(MessageBus msg) {
 		std::cout << msg << std::endl;
 		return;
 	}
-	std::cout << msg << std::endl;
+	//std::cout << msg << std::endl;
 	emit updateValues(msg);
 }
 void MessageHandler::processConfigUpdate(MessageBus msg) {
