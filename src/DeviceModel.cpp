@@ -16,7 +16,7 @@ using namespace boost;
 DeviceItem::DeviceItem(VarStorage data, DeviceItem *parent) {
 	parentItem = parent;
 	itemData = data;
-//        cout << "new DeviceItem: Data:" << data << " parent: "  << parent << " this: " << this << std::endl;
+	//        cout << "new DeviceItem: Data:" << data << " parent: "  << parent << " this: " << this << std::endl;
 }
 DeviceItem::~DeviceItem() {
 	qDeleteAll(childItems);
@@ -25,11 +25,11 @@ void DeviceItem::setData(VarStorage data) {
 	itemData = data;
 }
 void DeviceItem::appendChild(DeviceItem *item) {
-//cout << "appendChild" << std::endl;
+	//cout << "appendChild" << std::endl;
 	childItems.append(item);
 }
 DeviceItem *DeviceItem::child(int row) {
-//cout << "row: " << row << std::endl;
+	//cout << "row: " << row << std::endl;
 	return childItems.value(row);
 }
 int DeviceItem::childCount() const {
@@ -37,7 +37,7 @@ int DeviceItem::childCount() const {
 	return childItems.count();
 }
 int DeviceItem::row() const {
-//cout << "getrow()" << std::endl;
+	//cout << "getrow()" << std::endl;
 	if (parentItem)
 		return parentItem->childItems.indexOf(const_cast<DeviceItem*>(this));
 
@@ -48,11 +48,11 @@ int DeviceItem::columnCount() const {
 	return DeviceModel_t::DEVICEMODEL_T_COLUMNS_MAX;
 }
 VarStorage DeviceItem::data() const {
-//cout << "getdata" << std::endl;
+	//cout << "getdata" << std::endl;
 	return itemData;
 }
 DeviceItem *DeviceItem::parent() {
-//cout << "getparent" << std::endl;
+	//cout << "getparent" << std::endl;
 	return parentItem;
 }
 bool DeviceItem::removeChild(DeviceItem *item) {
@@ -67,7 +67,7 @@ bool DeviceItem::remove() {
 
 
 DeviceModel_t::DeviceModel_t(QObject *parent) :
-		QAbstractItemModel(parent) {
+				QAbstractItemModel(parent) {
 	setParent(parent);
 #if QT_VERSION < 0x050000
 	QHash<int, QByteArray> roles;
@@ -178,7 +178,7 @@ void DeviceModel_t::addDevice(const VarStorage &Device) {
 	long type;
 	Device->getStringValue("EndPtName", deviceName);
 	Device->getLongValue(SRVCAP_ENDPT_TYPE, type);
-//         qDebug() << QString("Adding Device ").append(deviceName.c_str()) << " to DeviceModel of type " << type;
+	//         qDebug() << QString("Adding Device ").append(deviceName.c_str()) << " to DeviceModel of type " << type;
 	if (Device->getStringValue(SRVCAP_ENDPT_SERIAL, deviceid) == true) {
 		if (!m_devices.contains(deviceid)) {
 			/* does it have a parent? */
@@ -195,7 +195,7 @@ void DeviceModel_t::addDevice(const VarStorage &Device) {
 				this->rootItem->appendChild(item);
 			}
 			m_devices.insert(deviceid, item);
-//			 qDebug() << QString("Added Device ").append(deviceName.c_str()) << " to DeviceModel of type " << type;
+			//			 qDebug() << QString("Added Device ").append(deviceName.c_str()) << " to DeviceModel of type " << type;
 			endInsertRows();
 		} else {
 			qWarning() << QString("Device ").append(deviceName.c_str()) << " already present in DeviceModel";
@@ -227,7 +227,7 @@ void DeviceModel_t::delDevice(const std::string deviceid) {
 	}
 }
 
-void DeviceModel_t::updateDevice(const VarStorage &device) {
+void DeviceModel_t::updateDeviceVars(const VarStorage &device) {
 	std::string from;
 	if (!device->getStringValue(SRVCAP_ENDPT_SERIAL, from)) {
 		//cout << "Cant Find Device" << std::endl;
@@ -241,7 +241,7 @@ void DeviceModel_t::updateDevice(const VarStorage &device) {
 	if (this->m_devices.contains(from)) {
 		emit dataChanged(Items[0], Items[0]);
 	} else {
-		qWarning() << "Can't find Device in m_devices list for Update";
+		qWarning() << "Can't find Device in m_devices list for UpdateVars";
 	}
 }
 
@@ -259,9 +259,63 @@ void DeviceModel_t::updateDeviceConfig(const VarStorage &device) {
 	if (this->m_devices.contains(from)) {
 		emit dataChanged(Items[0], Items[0]);
 	} else {
-		qWarning() << "Can't find Device in m_devices list for Update";
+		qWarning() << "Can't find Device in m_devices list for UpdateConfig";
 	}
 }
+
+void DeviceModel_t::addDeviceVarDescriptors(const std::string &device, const VarStorage &cd) {
+	QModelIndexList Items = this->match(this->index(0, 0, QModelIndex()), (int) SerialRole, QString::fromStdString(device), 2, Qt::MatchRecursive);
+	if (Items.count() <= 0) {
+		qWarning() << "Can't find Device in match list for Model";
+		return;
+	}
+	if (this->m_devices.contains(device)) {
+		emit dataChanged(Items[0], Items[0]);
+	} else {
+		qWarning() << "Can't find Device in m_devices list for addDeviceVarDescriptors";
+	}
+}
+void DeviceModel_t::addDeviceConfigDescriptors(const std::string &device, const VarStorage &cd) {
+	QModelIndexList Items = this->match(this->index(0, 0, QModelIndex()), (int) SerialRole, QString::fromStdString(device), 2, Qt::MatchRecursive);
+	if (Items.count() <= 0) {
+		qWarning() << "Can't find Device in match list for Model";
+		return;
+	}
+	if (this->m_devices.contains(device)) {
+		emit dataChanged(Items[0], Items[0]);
+	} else {
+		qWarning() << "Can't find Device in m_devices list for addDeviceConfigDescriptors";
+	}
+}
+void DeviceModel_t::delDeviceVarDescriptors(const std::string &device, const std::string &field) {
+	QModelIndexList Items = this->match(this->index(0, 0, QModelIndex()), (int) SerialRole, QString::fromStdString(device), 2, Qt::MatchRecursive);
+	if (Items.count() <= 0) {
+		qWarning() << "Can't find Device in match list for Model";
+		return;
+	}
+	if (this->m_devices.contains(device)) {
+		emit dataChanged(Items[0], Items[0]);
+	} else {
+		qWarning() << "Can't find Device in m_devices list for delDeviceVarDescriptors";
+	}
+
+}
+void DeviceModel_t::delDeviceConfigDescriptors(const std::string &device, const std::string &field) {
+	QModelIndexList Items = this->match(this->index(0, 0, QModelIndex()), (int) SerialRole, QString::fromStdString(device), 2, Qt::MatchRecursive);
+	if (Items.count() <= 0) {
+		qWarning() << "Can't find Device in match list for Model";
+		return;
+	}
+	if (this->m_devices.contains(device)) {
+		emit dataChanged(Items[0], Items[0]);
+	} else {
+		qWarning() << "Can't find Device in m_devices list for delDeviceConfigDescriptors";
+	}
+
+}
+
+
+
 int DeviceModel_t::rowCount(const QModelIndex & parent) const {
 	DeviceItem *parentItem;
 	if (parent.column() > 0)
@@ -310,13 +364,13 @@ QVariant DeviceModel_t::data(const QModelIndex & index, int role) const {
 	 */
 	const DeviceItem *item = static_cast<DeviceItem*>(index.internalPointer());
 	const VarStorage Device = item->data();
-//cout << "want " << item << " stored in " << Device << std::endl;
+	//cout << "want " << item << " stored in " << Device << std::endl;
 	if (Device.get() == NULL) {
 		qCritical() << "Device Is Empty?";
 		return QVariant();
 	}
-//     qDebug() << "get Role" << role;
-//     Device->printToStream();
+	//     qDebug() << "get Role" << role;
+	//     Device->printToStream();
 	if (role == Qt::DisplayRole) {
 		switch (index.column()) {
 			case DeviceName: {
@@ -551,35 +605,35 @@ void DeviceModel_t::setData(QString serial, QString name, QVariant value, bool s
 				VarContainerFactory(newvariable);
 				switch (variable->getType(name.toStdString())) {
 					case ST_STRING:
-					newvariable->addStringValue(name.toStdString(), value.toString().toStdString());
-					break;
+						newvariable->addStringValue(name.toStdString(), value.toString().toStdString());
+						break;
 					case ST_INT:
-					newvariable->addIntValue(name.toStdString(), value.toInt());
-					break;
+						newvariable->addIntValue(name.toStdString(), value.toInt());
+						break;
 					case ST_LONG:
-					newvariable->addLongValue(name.toStdString(), value.toLongLong());
-					break;
+						newvariable->addLongValue(name.toStdString(), value.toLongLong());
+						break;
 					case ST_LONGLONG:
-					newvariable->addLongLongValue(name.toStdString(), value.toLongLong());
-					break;
+						newvariable->addLongLongValue(name.toStdString(), value.toLongLong());
+						break;
 					case ST_FLOAT:
-					newvariable->addFloatValue(name.toStdString(), value.toFloat());
-					break;
+						newvariable->addFloatValue(name.toStdString(), value.toFloat());
+						break;
 					case ST_HASH:
-					qWarning() << "Hash Not implemented in setData";
-					break;
+						qWarning() << "Hash Not implemented in setData";
+						break;
 					case ST_BOOL:
-					newvariable->addBoolValue(name.toStdString(), value.toBool());
-					break;
+						newvariable->addBoolValue(name.toStdString(), value.toBool());
+						break;
 					case ST_DATETIME:
-					qWarning() << "DateTime not implemented in setData";
-					break;
+						qWarning() << "DateTime not implemented in setData";
+						break;
 					case ST_VARSTORAGE:
-					qWarning() << "VarStorage not implemented in setData";
-					break;
+						qWarning() << "VarStorage not implemented in setData";
+						break;
 					case ST_INVALID:
-					qWarning() << "setData for a INVALID???";
-					break;
+						qWarning() << "setData for a INVALID???";
+						break;
 				}
 				if (sync) {
 					/* send it out straight away using MSG_WHAT_ENDPNT */
@@ -771,8 +825,14 @@ QVariant VarStorageHelper_t::getValue(QString name, int pos) {
 		qWarning() << "Out of Bounds Request for a Array Field: " << fieldName;
 		return QVariant();
 	}
+	/* see if it exists, otherwise, return the default */
+	if (val->getSize(fieldName.toStdString()) <= 0) {
+		qWarning() << "Returning Default Value for " << fieldName << " as it doesn't exist in our Vars Yet";
+		return this->getDefault(fieldName);
+	}
 
-	switch (val->getType(fieldName.toStdString())) {
+
+	switch (this->getRealType(fieldName)) {
 		case ST_STRING:
 			return QVariant(VSE.getString(val, fieldName, pos));
 		case ST_INT:
@@ -853,27 +913,31 @@ qlonglong VarStorageHelper_t::getMax(QString name) {
 
 QVariant VarStorageHelper_t::getDefault(QString name) {
 	HashVals vals;
-	if (this->descriptor->getHashValue(name.toStdString(), vals)) {
-		switch (boost::get<int>(vals["type"])) {
-			case ST_STRING:
-			case ST_DATETIME:
-				return QVariant((char *) boost::get<std::string>(vals["defaultstr"]).c_str());
-			case ST_INT:
-			case ST_LONG:
-			case ST_LONGLONG:
-			case ST_FLOAT:
-			case ST_BOOL:
-			case ST_LIST:
-				return QVariant((long long) boost::get<long long>(vals["defaultnum"]));
-			case ST_HASH:
-			case ST_VARSTORAGE:
-			case ST_INVALID:
-				qWarning() << "Unsupported Type Requested from getDefault(name): " << name;
-				return QVariant();
+	try {
+		if (this->descriptor->getHashValue(name.toStdString(), vals)) {
+			switch (boost::get<int>(vals["Type"])) {
+				case ST_STRING:
+				case ST_DATETIME:
+					return QVariant((char *) boost::get<std::string>(vals["defaultstr"]).c_str());
+				case ST_INT:
+				case ST_LONG:
+				case ST_LONGLONG:
+				case ST_FLOAT:
+				case ST_BOOL:
+				case ST_LIST:
+					return QVariant((long long) boost::get<long long>(vals["defaultnum"]));
+				case ST_HASH:
+				case ST_VARSTORAGE:
+				case ST_INVALID:
+					qWarning() << "Unsupported Type Requested from getDefault(name): " << name;
+					return QVariant();
+			}
+		} else {
+			qWarning() << name << " does not exist in Descriptors (getDescription())";
+			return QVariant();
 		}
-	} else {
-		qWarning() << name << " does not exist in Descriptors (getDescription())";
-		return QVariant();
+	} catch (std::exception &e) {
+		qWarning() << "Exception Caught in getDefault: " << e.what();
 	}
 	return QVariant();
 }

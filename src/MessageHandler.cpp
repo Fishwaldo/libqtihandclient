@@ -132,6 +132,18 @@ void MessageHandler::MessageReceivedFromGateway(const muscle::MessageRef & msg, 
 		case MSB_SETUP:
 			processSetup(mb);
 			break;
+		case MSB_ADD_CONFIG:
+			processAddConfig(mb);
+			break;
+		case MSB_ADD_VAR:
+			processAddVar(mb);
+			break;
+		case MSB_DEL_CONFIG:
+			processDelConfig(mb);
+			break;
+		case MSB_DEL_VAR:
+			processDelVar(mb);
+
 		default:
 			qWarning() << "Got Unknown What Message: " <<  mb->getTypeAsString().c_str();
 			//qWarning() << mb;
@@ -223,6 +235,61 @@ void MessageHandler::processConfigUpdate(MessageBus msg) {
 	}
 	emit updateConfig(msg);
 }
+
+void MessageHandler::processAddConfig(MessageBus msg) {
+	if (msg->getType() != MSB_ADD_CONFIG) {
+		qWarning() << "Invalid MessageBus Type recieved in processAddConfig" << msg->getTypeAsString().c_str();
+		return;
+	}
+	VarStorage config = msg->getNewConfig();
+	if (config->getSize() == 0) {
+		qWarning() << "Empty config message from MessageBus";
+		std::cout << msg << std::endl;
+		return;
+	}
+	std::cout << "Doing" << std::endl;
+	emit addConfig(msg);
+}
+void MessageHandler::processAddVar(MessageBus msg) {
+	if (msg->getType() != MSB_ADD_VAR) {
+		qWarning() << "Invalid MessageBus Type recieved in processAddVar" << msg->getTypeAsString().c_str();
+		return;
+	}
+	VarStorage config = msg->getNewVar();
+	if (config->getSize() == 0) {
+		qWarning() << "Empty config message from MessageBus";
+		std::cout << msg << std::endl;
+		return;
+	}
+	emit addVar(msg);
+}
+void MessageHandler::processDelConfig(MessageBus msg) {
+	if (msg->getType() != MSB_DEL_CONFIG) {
+		qWarning() << "Invalid MessageBus Type recieved in processDelConfig" << msg->getTypeAsString().c_str();
+		return;
+	}
+	VarStorage config = msg->getDelConfig();
+	if (config->getSize() == 0) {
+		qWarning() << "Empty config message from MessageBus";
+		std::cout << msg << std::endl;
+		return;
+	}
+	emit delConfig(msg);
+}
+void MessageHandler::processDelVar(MessageBus msg) {
+	if (msg->getType() != MSB_DEL_VAR) {
+		qWarning() << "Invalid MessageBus Type recieved in processDelVar" << msg->getTypeAsString().c_str();
+		return;
+	}
+	VarStorage config = msg->getDelVar();
+	if (config->getSize() == 0) {
+		qWarning() << "Empty config message from MessageBus";
+		std::cout << msg << std::endl;
+		return;
+	}
+	emit delVar(msg);
+}
+
 
 void MessageHandler::setType(int Type) {
 	this->type = Type;

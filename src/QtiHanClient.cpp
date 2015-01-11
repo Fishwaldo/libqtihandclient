@@ -75,6 +75,15 @@ QtiHanClient::QtiHanClient(QObject *parent) {
 				this, SLOT(HandleDeviceUpdate(MessageBus)));
 	QObject::connect(this->mh, SIGNAL(updateConfig(MessageBus)),
 				this, SLOT(HandleDeviceConfigUpdate(MessageBus)));
+	QObject::connect(this->mh, SIGNAL(addConfig(MessageBus)),
+				this, SLOT(HandleAddConfig(MessageBus)));
+	QObject::connect(this->mh, SIGNAL(addVar(MessageBus)),
+				this, SLOT(HandleAddVar(MessageBus)));
+	QObject::connect(this->mh, SIGNAL(delConfig(MessageBus)),
+				this, SLOT(HandleDelConfig(MessageBus)));
+	QObject::connect(this->mh, SIGNAL(delVar(MessageBus)),
+				this, SLOT(HandleDelVar(MessageBus)));
+
 	QObject::connect(this->mh, SIGNAL(StateChange(State_e)),
 				this, SLOT(HandleStateChange(State_e)));
 	QObject::connect(this->mh, SIGNAL(gotTermTypeMapping(MessageBus)),
@@ -416,7 +425,7 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 
 	//newvals->addStringValue(SRVCAP_ENDPT_SERIAL, deviceID);
 	//GlobalDevices[deviceID]->replaceVarStorageValue(SRVCAP_ENDPT_VARS, newvals);
-	this->tdm->updateDevice(newvals);
+	this->tdm->updateDeviceVars(newvals);
 	emit updateValues(deviceID.c_str(), updatedfields);
 }
 
@@ -652,6 +661,130 @@ void QtiHanClient::HandleDeviceConfigUpdate(MessageBus msg) {
 	this->tdm->updateDeviceConfig(newvals);
 	emit updateConfig(deviceID.c_str(), updatedfields);
 }
+
+void QtiHanClient::HandleAddConfig(MessageBus item) {
+	VarStorage msg = item->getNewConfig();
+	HashVals hv;
+	if (!msg->getHashValue("ConfigDescriptor", hv)) {
+		qWarning() << "Can't get ConfigDescriptor for HandleAddConfig";
+		return;
+	}
+	std::string deviceID = item->getSource();
+	/* Regardless of whats going on, add this new End Point to the Global DeviceMap */
+	if (!GlobalDevices.contains(deviceID)) {
+		qWarning() << "Cannot Find device " << QString::fromStdString(deviceID) << " in GlobalDevices List for HandleAddConfig";
+		return;
+	}
+	VarStorage config;
+	if (GlobalDevices[deviceID]->getVarStorageValue(SRVCAP_ENDPT_CONFIG_DESC, config) == false) {
+		qWarning("Can't get End Point Config from GloablDevices");
+		return;
+	}
+	if (config->getSize(boost::get<std::string>(hv["Name"])) > 0) {
+		qWarning() << "ConfigDescriptor for Field " << QString::fromStdString(boost::get<std::string>(hv["Name"])) << " Already Exists";
+		return;
+	}
+	if (!config->addHashValue(boost::get<std::string>(hv["Name"]), hv)) {
+		qWarning() << "Failed to add ConfigDescriptor for field " << QString::fromStdString(boost::get<std::string>(hv["Name"]));
+		return;
+	}
+	std::cout << "HandleAddConfig: " << deviceID << " Field:" << boost::get<std::string>(hv["Name"]) << std::endl;
+	this->tdm->addDeviceConfigDescriptors(deviceID, msg);
+	emit newDeviceConfig(QString::fromStdString(deviceID), QString::fromStdString(boost::get<std::string>(hv["Name"])));
+}
+void QtiHanClient::HandleAddVar(MessageBus item) {
+	VarStorage msg = item->getNewVar();
+	HashVals hv;
+	if (!msg->getHashValue("VarDescriptor", hv)) {
+		qWarning() << "Can't get ConfigDescriptor for HandleAddVar";
+		return;
+	}
+	std::string deviceID = item->getSource();
+	/* Regardless of whats going on, add this new End Point to the Global DeviceMap */
+	if (!GlobalDevices.contains(deviceID)) {
+		qWarning() << "Cannot Find device " << QString::fromStdString(deviceID) << " in GlobalDevices List for HandleAddVar";
+		return;
+	}
+	VarStorage config;
+	if (GlobalDevices[deviceID]->getVarStorageValue(SRVCAP_ENDPT_VARS_DESC, config) == false) {
+		qWarning("Can't get End Point Config from GloablDevices");
+		return;
+	}
+	if (config->getSize(boost::get<std::string>(hv["Name"])) > 0) {
+		qWarning() << "ConfigDescriptor for Field " << QString::fromStdString(boost::get<std::string>(hv["Name"])) << " Already Exists";
+		return;
+	}
+	if (!config->addHashValue(boost::get<std::string>(hv["Name"]), hv)) {
+		qWarning() << "Failed to add ConfigDescriptor for field " << QString::fromStdString(boost::get<std::string>(hv["Name"]));
+		return;
+	}
+	std::cout << "HandleAddVar: " << deviceID << " Field:" << boost::get<std::string>(hv["Name"]) << std::endl;
+	this->tdm->addDeviceVarDescriptors(deviceID, msg);
+	emit newDeviceVar(QString::fromStdString(deviceID), QString::fromStdString(boost::get<std::string>(hv["Name"])));
+}
+void QtiHanClient::HandleDelConfig(MessageBus item) {
+	VarStorage msg = item->getDelConfig();
+	std::string field;
+	if (!msg->getStringValue("DelConfig", field)) {
+		qWarning() << "Can't get DelConfig Field for HandleDelConfig";
+		return;
+	}
+	std::string deviceID = item->getSource();
+	/* Regardless of whats going on, add this new End Point to the Global DeviceMap */
+	if (!GlobalDevices.contains(deviceID)) {
+		qWarning() << "Cannot Find device " << QString::fromStdString(deviceID) << " in GlobalDevices List for HandleDelConfig";
+		return;
+	}
+	VarStorage config;
+	if (GlobalDevices[deviceID]->getVarStorageValue(SRVCAP_ENDPT_CONFIG_DESC, config) == false) {
+		qWarning("Can't get End Point Config from GloablDevices");
+		return;
+	}
+	if (config->getSize(field) <= 0) {
+		qWarning() << "ConfigDescriptor for Field " << QString::fromStdString(field) << " does not exist";
+		return;
+	}
+	if (!config->delValue(field)) {
+		qWarning() << "Can't Delete ConfigDescriptor for Field " << QString::fromStdString(field);
+		return;
+	}
+	std::cout << "HandleDelConfig: " << deviceID << " Field:" << field << std::endl;
+	this->tdm->delDeviceConfigDescriptors(deviceID, field);
+	emit delDeviceConfig(QString::fromStdString(deviceID), QString::fromStdString(field));
+}
+void QtiHanClient::HandleDelVar(MessageBus item) {
+	VarStorage msg = item->getDelVar();
+	std::string field;
+	if (!msg->getStringValue("delVar", field)) {
+		qWarning() << "Can't get delVar Field for HandleDelVar";
+		return;
+	}
+	std::string deviceID = item->getSource();
+	/* Regardless of whats going on, add this new End Point to the Global DeviceMap */
+	if (!GlobalDevices.contains(deviceID)) {
+		qWarning() << "Cannot Find device " << QString::fromStdString(deviceID) << " in GlobalDevices List for HandleDelVar";
+		return;
+	}
+	VarStorage config;
+	if (GlobalDevices[deviceID]->getVarStorageValue(SRVCAP_ENDPT_VARS_DESC, config) == false) {
+		qWarning("Can't get End Point Config from GloablDevices");
+		return;
+	}
+	if (config->getSize(field) <= 0) {
+		qWarning() << "ConfigDescriptor for Field " << QString::fromStdString(field) << " does not exist";
+		return;
+	}
+	if (!config->delValue(field)) {
+		qWarning() << "Can't Delete ConfigDescriptor for Field " << QString::fromStdString(field);
+		return;
+	}
+
+	std::cout << "HandleDelVar: " << deviceID << " Field:" << field << std::endl;
+	this->tdm->delDeviceVarDescriptors(deviceID, field);
+	emit delDeviceConfig(QString::fromStdString(deviceID), QString::fromStdString(field));
+}
+
+
 
 void QtiHanClient::sendMessage(MessageBus msg) {
 	this->mh->sendMessage(msg);

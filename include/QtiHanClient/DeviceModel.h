@@ -79,8 +79,12 @@ public:
     QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
     bool setData (const QModelIndex & index, const QVariant &value, int role = Qt::EditRole);
     void setData (QString serial, QString name, QVariant value, bool sync = true);
-    void updateDevice(const VarStorage &device);
+    void updateDeviceVars(const VarStorage &device);
     void updateDeviceConfig(const VarStorage &device);
+    void addDeviceVarDescriptors(const std::string &device, const VarStorage &cd);
+    void addDeviceConfigDescriptors(const std::string &device, const VarStorage &cd);
+    void delDeviceVarDescriptors(const std::string &device, const std::string &field);
+    void delDeviceConfigDescriptors(const std::string &device, const std::string &field);
 signals:
 	void sendMsg(MessageBus);
 

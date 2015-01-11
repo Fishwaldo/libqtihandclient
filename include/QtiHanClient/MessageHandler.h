@@ -72,6 +72,10 @@ Q_SIGNALS:
 	void updateConfig(MessageBus vals);
 	void gotTermTypeMapping(MessageBus vals);
 	void gotMyInfo(MessageBus vals);
+	void addConfig(MessageBus vals);
+	void addVar(MessageBus vals);
+	void delConfig(MessageBus vals);
+	void delVar(MessageBus vals);
 
 public Q_SLOTS:
 	void sendMessage(MessageBus);
@@ -89,6 +93,10 @@ private:
 	void processSensorUpdate(MessageBus msg);
 	void processConfigUpdate(MessageBus msg);
 	void processSetup(MessageBus msg);
+	void processAddConfig(MessageBus msg);
+	void processAddVar(MessageBus msg);
+	void processDelConfig(MessageBus msg);
+	void processDelVar(MessageBus msg);
 	int type;
 	QString username;
 	QString password;

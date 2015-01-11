@@ -86,6 +86,10 @@ Q_SIGNALS:
 	void delEndPt(std::string item);
 	void updateValues(QString, QVector<QString>);
 	void updateConfig(QString, QVector<QString>);
+	void newDeviceConfig(QString , QString );
+	void newDeviceVar(QString , QString );
+	void delDeviceConfig(QString , QString );
+	void delDeviceVar(QString , QString );
 	void StateChange(State_e);
 public Q_SLOTS:
 	void sendMessage(MessageBus);
@@ -97,6 +101,10 @@ private Q_SLOTS:
 	void HandleDelDevice(MessageBus item);
 	void HandleDeviceUpdate(MessageBus item);
 	void HandleDeviceConfigUpdate(MessageBus item);
+	void HandleAddConfig(MessageBus item);
+	void HandleAddVar(MessageBus item);
+	void HandleDelConfig(MessageBus item);
+	void HandleDelVar(MessageBus item);
 	void HandleStateChange(State_e state);
 	void HandleTermTypeMappings(MessageBus vals);
 	void HandleClientInform(MessageBus vals);
