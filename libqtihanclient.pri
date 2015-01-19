@@ -15,4 +15,5 @@ HEADERS += 	$$PWD/include/QtiHanClient/DeviceModel.h \
 		$$PWD/include/QtiHanClient/modeltest.h \
 		$$PWD/include/QtiHanClient/kdescendantsproxymodel.h \
 		$$PWD/include/QtiHanClient/kbihash_p.h \
-		$$PWD/include/QtiHanClient/kitemmodels_export.h
+		$$PWD/include/QtiHanClient/kitemmodels_export.h \
+		$$PWD/include/QtiHanClient/QtiHanClientDefs.h
