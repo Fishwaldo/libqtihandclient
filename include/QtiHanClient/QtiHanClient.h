@@ -91,6 +91,8 @@ Q_SIGNALS:
 	void delDeviceConfig(QString , QString );
 	void delDeviceVar(QString , QString );
 	void StateChange(State_e);
+	void configCallback(QString, QString, VarStorage);
+	void valCallback(QString, QString, VarStorage);
 public Q_SLOTS:
 	void sendMessage(MessageBus);
 private Q_SLOTS:

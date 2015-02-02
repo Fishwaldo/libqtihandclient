@@ -1,24 +1,24 @@
 /* controlpanel - QtiHanClient.cpp
-** Copyright (c) 2010 Justin Hammond
-**
-**  This program is free software; you can redistribute it and/or modify
-**  it under the terms of the GNU General Public License as published by
-**  the Free Software Foundation; either version 2 of the License, or
-**  (at your option) any later version.
-**
-**  This program is distributed in the hope that it will be useful,
-**  but WITHOUT ANY WARRANTY; without even the implied warranty of
-**  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-**  GNU General Public License for more details.
-**
-**  You should have received a copy of the GNU General Public License
-**  along with this program; if not, write to the Free Software
-**  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
-**  USA
-**
-** controlpanel SVN Identification:
-** $Rev$
-*/
+ ** Copyright (c) 2010 Justin Hammond
+ **
+ **  This program is free software; you can redistribute it and/or modify
+ **  it under the terms of the GNU General Public License as published by
+ **  the Free Software Foundation; either version 2 of the License, or
+ **  (at your option) any later version.
+ **
+ **  This program is distributed in the hope that it will be useful,
+ **  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ **  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ **  GNU General Public License for more details.
+ **
+ **  You should have received a copy of the GNU General Public License
+ **  along with this program; if not, write to the Free Software
+ **  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
+ **  USA
+ **
+ ** controlpanel SVN Identification:
+ ** $Rev$
+ */
 
 /** @file QtiHanClient.cpp
  *  @brief
@@ -62,36 +62,36 @@ QtiHanClient::QtiHanClient(QObject *parent) {
 	this->mt = new ModelTest(this->tdm, this);
 
 	QObject::connect(this->mh, SIGNAL(connected()),
-				this, SLOT(HandleConnected()));
+			this, SLOT(HandleConnected()));
 	QObject::connect(this->mh, SIGNAL(disconnected()),
-				this, SLOT(HandleDisconnected()));
+			this, SLOT(HandleDisconnected()));
 	QObject::connect(this->mh, SIGNAL(error(QString, QAbstractSocket::SocketError)),
-				this, SLOT(HandleError(QString, QAbstractSocket::SocketError)));
+			this, SLOT(HandleError(QString, QAbstractSocket::SocketError)));
 	QObject::connect(this->mh, SIGNAL(newEndPt(MessageBus)),
-				this, SLOT(HandleNewDevice(MessageBus)));
+			this, SLOT(HandleNewDevice(MessageBus)));
 	QObject::connect(this->mh, SIGNAL(delEndPt(MessageBus)),
-				this, SLOT(HandleDelDevice(MessageBus)));
+			this, SLOT(HandleDelDevice(MessageBus)));
 	QObject::connect(this->mh, SIGNAL(updateValues(MessageBus)),
-				this, SLOT(HandleDeviceUpdate(MessageBus)));
+			this, SLOT(HandleDeviceUpdate(MessageBus)));
 	QObject::connect(this->mh, SIGNAL(updateConfig(MessageBus)),
-				this, SLOT(HandleDeviceConfigUpdate(MessageBus)));
+			this, SLOT(HandleDeviceConfigUpdate(MessageBus)));
 	QObject::connect(this->mh, SIGNAL(addConfig(MessageBus)),
-				this, SLOT(HandleAddConfig(MessageBus)));
+			this, SLOT(HandleAddConfig(MessageBus)));
 	QObject::connect(this->mh, SIGNAL(addVar(MessageBus)),
-				this, SLOT(HandleAddVar(MessageBus)));
+			this, SLOT(HandleAddVar(MessageBus)));
 	QObject::connect(this->mh, SIGNAL(delConfig(MessageBus)),
-				this, SLOT(HandleDelConfig(MessageBus)));
+			this, SLOT(HandleDelConfig(MessageBus)));
 	QObject::connect(this->mh, SIGNAL(delVar(MessageBus)),
-				this, SLOT(HandleDelVar(MessageBus)));
+			this, SLOT(HandleDelVar(MessageBus)));
 
 	QObject::connect(this->mh, SIGNAL(StateChange(State_e)),
-				this, SLOT(HandleStateChange(State_e)));
+			this, SLOT(HandleStateChange(State_e)));
 	QObject::connect(this->mh, SIGNAL(gotTermTypeMapping(MessageBus)),
-				this, SLOT(HandleTermTypeMappings(MessageBus)));
+			this, SLOT(HandleTermTypeMappings(MessageBus)));
 	QObject::connect(this->tdm, SIGNAL(sendMsg(MessageBus)),
-				this->mh, SLOT(sendMessage(MessageBus)));
+			this->mh, SLOT(sendMessage(MessageBus)));
 	QObject::connect(this->mh, SIGNAL(gotMyInfo(MessageBus)),
-				this, SLOT(HandleClientInform(MessageBus)));
+			this, SLOT(HandleClientInform(MessageBus)));
 	this->type = 0;
 	this->mh->setFlags(CLNTCAP_FLAG_VARTYPE | CLNTCAP_FLAG_TERMS);
 
@@ -202,6 +202,8 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 	std::string deviceID;
 	QVector<QString> updatedfields;
 	VarStorage vals;
+	VarStorage valsdescriptor;
+	bool compare = true;
 	deviceID = msg->getSource();
 #if 0
 	if (!item->getStringValue(SRVCAP_ENDPT_SERIAL, deviceID)) {
@@ -225,6 +227,11 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 		qWarning("Can't get End Point Vars from GloablDevices");
 		return;
 	}
+	if (GlobalDevices[deviceID]->getVarStorageValue(SRVCAP_ENDPT_VARS_DESC, valsdescriptor) == false) {
+		qWarning("Can't get End Point Var Descriptors from GloablDevices");
+		return;
+	}
+
 	//cout << "New: " << std::endl;
 	//newvals->printToStream();
 	//cout << "Old: " << std::endl;
@@ -234,15 +241,39 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 	//qDebug() << "New Fields:";
 	for (std::size_t i = 0; i < newfields->size(); i++) {
 		//std::cout << newfields->at(i) << std::endl;
+
+		/* check if the NewField is a Callback */
+		HashVals desc;
+		if (valsdescriptor->getHashValue(newfields->at(i), desc)) {
+			try {
+				if ((t_ConfigType)boost::get<int>(desc["Type"]) == TC_CALLBACK) {
+					VarStorage cb;
+					if (newvals->getVarStorageValue(newfields->at(i), cb)) {
+						qDebug() << "Got Config Callback for Device " << deviceID.c_str() << " on Field " << QString::fromStdString(newfields->at(i));
+						emit configCallback(deviceID.c_str(), QString::fromStdString(newfields->at(i)), cb);
+					} else {
+						qWarning() << "Couldn't retrieve Callback Value from Update Message";
+					}
+					continue;
+				}
+			} catch (std::exception &e) {
+				qWarning() << "Exception in HandleDeviceUpdate: " << e.what();
+				continue;
+			}
+		} else {
+			qWarning() << "Couldn't Retrieve VarValDescriptor for Field " << QString::fromStdString(newfields->at(i));
+			continue;
+		}
+
 		/* confirm exists in oldfields */
 		if (vals->getSize(newfields->at(i)) <= 0) {
-				qDebug() << "New Field in Update Message";
-				/* do something */
+			qDebug() << "New Field in Update Message";
+			compare = false;
 		}
 		StoredType_t newtype = newvals->getType(newfields->at(i));
-		if (newtype != vals->getType(newfields->at(i))) {
+		if ((compare) && (newtype != vals->getType(newfields->at(i)))) {
 			/* values do not match type */
-			qWarning() << "Updated Field is not the same type as existing field";
+			qWarning() << "Updated Field " << QString::fromStdString(newfields->at(i)) <<  " is not the same type as existing field";
 			qWarning() << "NewType: " << newtype << " Existing Type: " << vals->getType(newfields->at(i));
 			continue;
 		}
@@ -255,11 +286,11 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 						qWarning() << "Couldn't get updated String Value";
 						continue;
 					}
-					if (!vals->getStringValue(newfields->at(i), oldval, j)) {
+					if ((compare) && (!vals->getStringValue(newfields->at(i), oldval, j))) {
 						qWarning() << "Couldn't get Old String Value";
 						continue;
 					}
-					if (newval != oldval) {
+					if ((!compare) || (newval != oldval)) {
 						vals->replaceStringValue(newfields->at(i), newval, j);
 						if (!updatedfields.contains(newfields->at(i).c_str()))
 							updatedfields.push_back(newfields->at(i).c_str());
@@ -273,11 +304,11 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 						qWarning() << "Couldn't get updated Int Value";
 						continue;
 					}
-					if (!vals->getIntValue(newfields->at(i), oldval, j)) {
+					if ((compare) && (!vals->getIntValue(newfields->at(i), oldval, j))) {
 						qWarning() << "Couldn't get Old Int Value";
 						continue;
 					}
-					if (newval != oldval) {
+					if ((!compare) || (newval != oldval)) {
 						vals->replaceIntValue(newfields->at(i), newval, j);
 						if (!updatedfields.contains(newfields->at(i).c_str()))
 							updatedfields.push_back(newfields->at(i).c_str());
@@ -291,11 +322,11 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 						qWarning() << "Couldn't get updated Long Value";
 						continue;
 					}
-					if (!vals->getLongValue(newfields->at(i), oldval, j)) {
+					if ((compare) && (!vals->getLongValue(newfields->at(i), oldval, j))) {
 						qWarning() << "Couldn't get Old Long Value";
 						continue;
 					}
-					if (newval != oldval) {
+					if ((!compare) || (newval != oldval)) {
 						vals->replaceLongValue(newfields->at(i), newval, j);
 						if (!updatedfields.contains(newfields->at(i).c_str()))
 							updatedfields.push_back(newfields->at(i).c_str());
@@ -309,11 +340,11 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 						qWarning() << "Couldn't get updated Long Long Value";
 						continue;
 					}
-					if (!vals->getLongLongValue(newfields->at(i), oldval, j)) {
+					if ((compare) && (!vals->getLongLongValue(newfields->at(i), oldval, j))) {
 						qWarning() << "Couldn't get Old Long Long Value";
 						continue;
 					}
-					if (newval != oldval) {
+					if ((!compare) || (newval != oldval)) {
 						vals->replaceLongLongValue(newfields->at(i), newval, j);
 						if (!updatedfields.contains(newfields->at(i).c_str()))
 							updatedfields.push_back(newfields->at(i).c_str());
@@ -327,11 +358,11 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 						qWarning() << "Couldn't get updated Float Value";
 						continue;
 					}
-					if (!vals->getFloatValue(newfields->at(i), oldval, j)) {
+					if ((compare) && (!vals->getFloatValue(newfields->at(i), oldval, j))) {
 						qWarning() << "Couldn't get Old Float Value";
 						continue;
 					}
-					if (newval != oldval) {
+					if ((!compare) || (newval != oldval)) {
 						vals->replaceFloatValue(newfields->at(i), newval, j);
 						if (!updatedfields.contains(newfields->at(i).c_str()))
 							updatedfields.push_back(newfields->at(i).c_str());
@@ -345,11 +376,11 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 						qWarning() << "Couldn't get updated Bool Value";
 						continue;
 					}
-					if (!vals->getBoolValue(newfields->at(i), oldval, j)) {
+					if ((compare) && (!vals->getBoolValue(newfields->at(i), oldval, j))) {
 						qWarning() << "Couldn't get Old Bool Value";
 						continue;
 					}
-					if (newval != oldval) {
+					if ((!compare) || (newval != oldval)) {
 						vals->replaceBoolValue(newfields->at(i), newval, j);
 						if (!updatedfields.contains(newfields->at(i).c_str()))
 							updatedfields.push_back(newfields->at(i).c_str());
@@ -363,11 +394,11 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 						qWarning() << "Couldn't get updated Bool Value";
 						continue;
 					}
-					if (!vals->getTimeValue(newfields->at(i), oldval, j)) {
+					if ((compare) && (!vals->getTimeValue(newfields->at(i), oldval, j))) {
 						qWarning() << "Couldn't get Old Bool Value";
 						continue;
 					}
-					if (newval != oldval) {
+					if ((!compare) || (newval != oldval)) {
 						vals->replaceTimeValue(newfields->at(i), newval, j);
 						if (!updatedfields.contains(newfields->at(i).c_str()))
 							updatedfields.push_back(newfields->at(i).c_str());
@@ -384,6 +415,7 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 					vals->replaceVarStorageValue(newfields->at(i), newval, j);
 					if (!updatedfields.contains(newfields->at(i).c_str()))
 						updatedfields.push_back(newfields->at(i).c_str());
+
 				}
 				break;
 				case ST_HASH: {
@@ -418,13 +450,14 @@ void QtiHanClient::HandleDeviceUpdate(MessageBus msg) {
 		}
 	}
 
-	qDebug() << "Updated Fields:";
+	if (updatedfields.size() == 0)
+		return;
+
+	qDebug() << "Updated Var Fields:";
 	for (int i = 0; i < updatedfields.size(); i++) {
 		qDebug() << qPrintable(updatedfields.at(i));
 	}
 
-	//newvals->addStringValue(SRVCAP_ENDPT_SERIAL, deviceID);
-	//GlobalDevices[deviceID]->replaceVarStorageValue(SRVCAP_ENDPT_VARS, newvals);
 	this->tdm->updateDeviceVars(newvals);
 	emit updateValues(deviceID.c_str(), updatedfields);
 }
@@ -434,6 +467,8 @@ void QtiHanClient::HandleDeviceConfigUpdate(MessageBus msg) {
 	std::string deviceID = msg->getSource();
 	QVector<QString> updatedfields;
 	VarStorage vals;
+	VarStorage valsdescriptor;
+	bool compare = true;
 
 	if (!GlobalDevices.contains(deviceID)) {
 		qWarning() << "Can't find Device in DeviceMap for HandleDeviceConfigUpdate";
@@ -457,6 +492,10 @@ void QtiHanClient::HandleDeviceConfigUpdate(MessageBus msg) {
 		qWarning("Can't get End Point Config from GloablDevices");
 		return;
 	}
+	if (GlobalDevices[deviceID]->getVarStorageValue(SRVCAP_ENDPT_CONFIG_DESC, valsdescriptor) == false) {
+		qWarning("Can't get End Point Var Descriptors from GloablDevices");
+		return;
+	}
 	//cout << "New: " << std::endl;
 	//newvals->printToStream();
 	//cout << "Old: " << std::endl;
@@ -467,14 +506,41 @@ void QtiHanClient::HandleDeviceConfigUpdate(MessageBus msg) {
 	for (std::size_t i = 0; i < newfields->size(); i++) {
 		//std::cout << newfields->at(i) << std::endl;
 		/* confirm exists in oldfields */
+
+		/* check if the NewField is a Callback */
+		HashVals desc;
+		if (valsdescriptor->getHashValue(newfields->at(i), desc)) {
+			try {
+				if ((t_ConfigType)boost::get<int>(desc["Type"]) == TC_CALLBACK) {
+					VarStorage cb;
+					if (newvals->getVarStorageValue(newfields->at(i), cb)) {
+						qDebug() << "Got Config Callback for Device " << deviceID.c_str() << " on Field " << QString::fromStdString(newfields->at(i));
+						emit configCallback(deviceID.c_str(), QString::fromStdString(newfields->at(i)), cb);
+					} else {
+						qWarning() << "Couldn't retrieve Callback Value from Update Message";
+					}
+					continue;
+				}
+			} catch (std::exception &e) {
+				qWarning() << "Exception in HandleDeviceUpdate: " << e.what();
+				continue;
+			}
+		} else {
+			qWarning() << "Couldn't Retrieve ConfigVarDescriptor for Field " << QString::fromStdString(newfields->at(i));
+			continue;
+		}
+
+
+
 		if (vals->getSize(newfields->at(i)) <= 0) {
-				qDebug() << "New Field in HandleDeviceConfigUpdate";
-				/* do something */
+			qDebug() << "New Field in HandleDeviceConfigUpdate";
+			/* just add it to the updates */
+			compare = false;
 		}
 		StoredType_t newtype = newvals->getType(newfields->at(i));
-		if (newtype != vals->getType(newfields->at(i))) {
+		if ((compare) && (newtype != vals->getType(newfields->at(i)))) {
 			/* values do not match type */
-			qWarning() << "Updated Field is not the same type as existing field";
+			qWarning() << "Updated Field " << QString::fromStdString(newfields->at(i)) << " is not the same type as existing field";
 			qWarning() << "NewType: " << newtype << " Existing Type: " << vals->getType(newfields->at(i));
 			continue;
 		}
@@ -487,11 +553,11 @@ void QtiHanClient::HandleDeviceConfigUpdate(MessageBus msg) {
 						qWarning() << "Couldn't get updated String Value";
 						continue;
 					}
-					if (!vals->getStringValue(newfields->at(i), oldval, j)) {
+					if ((compare) && (!vals->getStringValue(newfields->at(i), oldval, j))) {
 						qWarning() << "Couldn't get Old String Value";
 						continue;
 					}
-					if (newval != oldval) {
+					if ((!compare) || (newval != oldval)) {
 						vals->replaceStringValue(newfields->at(i), newval, j);
 						if (!updatedfields.contains(newfields->at(i).c_str()))
 							updatedfields.push_back(newfields->at(i).c_str());
@@ -505,11 +571,11 @@ void QtiHanClient::HandleDeviceConfigUpdate(MessageBus msg) {
 						qWarning() << "Couldn't get updated Int Value";
 						continue;
 					}
-					if (!vals->getIntValue(newfields->at(i), oldval, j)) {
+					if ((compare) && (!vals->getIntValue(newfields->at(i), oldval, j))) {
 						qWarning() << "Couldn't get Old Int Value";
 						continue;
 					}
-					if (newval != oldval) {
+					if ((!compare) || (newval != oldval)) {
 						vals->replaceIntValue(newfields->at(i), newval, j);
 						if (!updatedfields.contains(newfields->at(i).c_str()))
 							updatedfields.push_back(newfields->at(i).c_str());
@@ -523,11 +589,11 @@ void QtiHanClient::HandleDeviceConfigUpdate(MessageBus msg) {
 						qWarning() << "Couldn't get updated Long Value";
 						continue;
 					}
-					if (!vals->getLongValue(newfields->at(i), oldval, j)) {
+					if ((compare) && (!vals->getLongValue(newfields->at(i), oldval, j))) {
 						qWarning() << "Couldn't get Old Long Value";
 						continue;
 					}
-					if (newval != oldval) {
+					if ((!compare) || (newval != oldval)) {
 						vals->replaceLongValue(newfields->at(i), newval, j);
 						if (!updatedfields.contains(newfields->at(i).c_str()))
 							updatedfields.push_back(newfields->at(i).c_str());
@@ -541,11 +607,11 @@ void QtiHanClient::HandleDeviceConfigUpdate(MessageBus msg) {
 						qWarning() << "Couldn't get updated Long Long Value";
 						continue;
 					}
-					if (!vals->getLongLongValue(newfields->at(i), oldval, j)) {
+					if ((compare) && (!vals->getLongLongValue(newfields->at(i), oldval, j))) {
 						qWarning() << "Couldn't get Old Long Long Value";
 						continue;
 					}
-					if (newval != oldval) {
+					if ((!compare) || (newval != oldval)) {
 						vals->replaceLongLongValue(newfields->at(i), newval, j);
 						if (!updatedfields.contains(newfields->at(i).c_str()))
 							updatedfields.push_back(newfields->at(i).c_str());
@@ -559,11 +625,11 @@ void QtiHanClient::HandleDeviceConfigUpdate(MessageBus msg) {
 						qWarning() << "Couldn't get updated Float Value";
 						continue;
 					}
-					if (!vals->getFloatValue(newfields->at(i), oldval, j)) {
+					if ((compare) && (!vals->getFloatValue(newfields->at(i), oldval, j))) {
 						qWarning() << "Couldn't get Old Float Value";
 						continue;
 					}
-					if (newval != oldval) {
+					if ((!compare) || (newval != oldval)) {
 						vals->replaceFloatValue(newfields->at(i), newval, j);
 						if (!updatedfields.contains(newfields->at(i).c_str()))
 							updatedfields.push_back(newfields->at(i).c_str());
@@ -577,11 +643,11 @@ void QtiHanClient::HandleDeviceConfigUpdate(MessageBus msg) {
 						qWarning() << "Couldn't get updated Bool Value";
 						continue;
 					}
-					if (!vals->getBoolValue(newfields->at(i), oldval, j)) {
+					if ((compare) && (!vals->getBoolValue(newfields->at(i), oldval, j))) {
 						qWarning() << "Couldn't get Old Bool Value";
 						continue;
 					}
-					if (newval != oldval) {
+					if ((!compare) || (newval != oldval)) {
 						vals->replaceBoolValue(newfields->at(i), newval, j);
 						if (!updatedfields.contains(newfields->at(i).c_str()))
 							updatedfields.push_back(newfields->at(i).c_str());
@@ -595,11 +661,11 @@ void QtiHanClient::HandleDeviceConfigUpdate(MessageBus msg) {
 						qWarning() << "Couldn't get updated Bool Value";
 						continue;
 					}
-					if (!vals->getTimeValue(newfields->at(i), oldval, j)) {
+					if ((compare) && (!vals->getTimeValue(newfields->at(i), oldval, j))) {
 						qWarning() << "Couldn't get Old Bool Value";
 						continue;
 					}
-					if (newval != oldval) {
+					if ((!compare) || (newval != oldval)) {
 						vals->replaceTimeValue(newfields->at(i), newval, j);
 						if (!updatedfields.contains(newfields->at(i).c_str()))
 							updatedfields.push_back(newfields->at(i).c_str());
@@ -649,6 +715,8 @@ void QtiHanClient::HandleDeviceConfigUpdate(MessageBus msg) {
 			};
 		}
 	}
+	if (updatedfields.size() == 0)
+		return;
 
 	qDebug() << "Updated Config Fields:";
 	for (int i = 0; i < updatedfields.size(); i++) {

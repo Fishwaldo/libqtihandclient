@@ -297,12 +297,8 @@ public:
 
 		list_const_iterator iter;
 		VarList_t map;
-		std::cout << Var << std::endl;
-		std::cout << name.toStdString() << std::endl;
 		for (iter = Var->getListIterBegin(name.toStdString(), pos); iter != Var->getListIterEnd(name.toStdString(), pos); ++iter) {
-			std::cout << (*iter).first << " " << (*iter).second.c_str() << std::endl;
 			map.insert((*iter).first, (*iter).second.c_str());
-			std::cout << "done" << std::endl;
 		}
 		return QVariant::fromValue<VarList_t>(map);
 	}
@@ -370,7 +366,7 @@ public:
 	QVariant getValue(QString name, int pos = 0);
 	VarStorage setValue(VarStorage, QString, QVariant, int pos = 0);
 	QVariant getListOptions(QString name, int pos = 0);
-	int getRealType(QString name);
+	t_ConfigType getRealType(QString name);
 	int getType(QString name);
 	int getType(QString name, QString element);
 	QString getName(QString name);

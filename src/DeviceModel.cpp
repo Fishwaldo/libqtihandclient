@@ -264,6 +264,7 @@ void DeviceModel_t::updateDeviceConfig(const VarStorage &device) {
 }
 
 void DeviceModel_t::addDeviceVarDescriptors(const std::string &device, const VarStorage &cd) {
+	Q_UNUSED(cd);
 	QModelIndexList Items = this->match(this->index(0, 0, QModelIndex()), (int) SerialRole, QString::fromStdString(device), 2, Qt::MatchRecursive);
 	if (Items.count() <= 0) {
 		qWarning() << "Can't find Device in match list for Model";
@@ -276,6 +277,7 @@ void DeviceModel_t::addDeviceVarDescriptors(const std::string &device, const Var
 	}
 }
 void DeviceModel_t::addDeviceConfigDescriptors(const std::string &device, const VarStorage &cd) {
+	Q_UNUSED(cd);
 	QModelIndexList Items = this->match(this->index(0, 0, QModelIndex()), (int) SerialRole, QString::fromStdString(device), 2, Qt::MatchRecursive);
 	if (Items.count() <= 0) {
 		qWarning() << "Can't find Device in match list for Model";
@@ -288,6 +290,7 @@ void DeviceModel_t::addDeviceConfigDescriptors(const std::string &device, const 
 	}
 }
 void DeviceModel_t::delDeviceVarDescriptors(const std::string &device, const std::string &field) {
+	Q_UNUSED(field);
 	QModelIndexList Items = this->match(this->index(0, 0, QModelIndex()), (int) SerialRole, QString::fromStdString(device), 2, Qt::MatchRecursive);
 	if (Items.count() <= 0) {
 		qWarning() << "Can't find Device in match list for Model";
@@ -301,6 +304,7 @@ void DeviceModel_t::delDeviceVarDescriptors(const std::string &device, const std
 
 }
 void DeviceModel_t::delDeviceConfigDescriptors(const std::string &device, const std::string &field) {
+	Q_UNUSED(field);
 	QModelIndexList Items = this->match(this->index(0, 0, QModelIndex()), (int) SerialRole, QString::fromStdString(device), 2, Qt::MatchRecursive);
 	if (Items.count() <= 0) {
 		qWarning() << "Can't find Device in match list for Model";
@@ -660,50 +664,48 @@ VarStorageHelper_t::~VarStorageHelper_t() {
 QString VarStorageHelper_t::getSerial() {
 	return this->Serial;
 }
-int VarStorageHelper_t::getRealType(QString name) {
+t_ConfigType VarStorageHelper_t::getRealType(QString name) {
 	HashVals hv;
 	//std::cout << "GetType" << this->descriptor << std::endl;
 	if (!this->descriptor->getHashValue(name.toStdString(), hv)) {
 		qWarning() << "Couldn't get ConfigDescriptor for getType:" << name;
-		return ST_INVALID;
+		return TC_NULL;
 	}
-	return boost::get<int>(hv["Type"]);
+	return (t_ConfigType)boost::get<int>(hv["Type"]);
 }
 
 int VarStorageHelper_t::getType(QString name) {
 	HashVals hv;
-	//std::cout << "GetType" << this->descriptor << std::endl;
-	if (!this->descriptor->getHashValue(name.toStdString(), hv)) {
-		qWarning() << "Couldn't get ConfigDescriptor for getType:" << name;
-		return QVariant::Invalid;
-	}
 
 	//std::cout << "GetType: " << hv << std::endl;
-	switch (boost::get<int>(hv["Type"])) {
-		case ST_STRING:
+	switch (this->getRealType(name)) {
+		case TC_STRING:
 			return QVariant::String;
-		case ST_INT:
+		case TC_INT:
 			return QVariant::Int;
-		case ST_LONG:
+		case TC_LONG:
 			return QVariant::LongLong;
-		case ST_LONGLONG:
+		case TC_LONGLONG:
 			return QVariant::LongLong;
-		case ST_FLOAT:
+		case TC_FLOAT:
 			return QVariant::Double;
-		case ST_HASH:
+		case TC_HASH:
 			return qMetaTypeId<HashVals>();
-		case ST_BOOL:
+		case TC_BOOL:
 			return QVariant::Bool;
-		case ST_DATETIME:
+		case TC_DATETIME:
 			return QVariant::DateTime;
-		case ST_VARSTORAGE:
+		case TC_VARSTORAGE:
 			return QMetaType::type("VarStorage");
-		case ST_LIST:
+		case TC_LIST:
 			return QMetaType::type("VarList_t");
+		case TC_CALLBACK:
+			return QMetaType::type("VarStorage");
 		case ST_INVALID:
+		case TC_IPADDR:
 			return QVariant::Invalid;
 	}
-	qWarning() << "Unhandled type in getType: " << boost::get<int>(hv["Type"]);
+	qWarning() << "Unhandled type in getType: " << this->getRealType(name);
 	return QVariant::Invalid;
 }
 
@@ -833,17 +835,17 @@ QVariant VarStorageHelper_t::getValue(QString name, int pos) {
 
 
 	switch (this->getRealType(fieldName)) {
-		case ST_STRING:
+		case TC_STRING:
 			return QVariant(VSE.getString(val, fieldName, pos));
-		case ST_INT:
+		case TC_INT:
 			return QVariant(VSE.getInt(val, fieldName, pos));
-		case ST_LONG:
+		case TC_LONG:
 			return QVariant(VSE.getLong(val, fieldName, pos));
-		case ST_LONGLONG:
+		case TC_LONGLONG:
 			return QVariant(VSE.getLongLong(val, fieldName, pos));
-		case ST_FLOAT:
+		case TC_FLOAT:
 			return QVariant(VSE.getFloat(val, fieldName, pos));
-		case ST_HASH:
+		case TC_HASH:
 			/* HASH's have to have : as a field Seperator
 			 */
 			if (name.contains(':')) {
@@ -852,15 +854,18 @@ QVariant VarStorageHelper_t::getValue(QString name, int pos) {
 				//qWarning() << "Invalid fieldName for Hash Container: " << name;
 				return QVariant(VSE.getHash(val, fieldName, pos));
 			}
-		case ST_BOOL:
+		case TC_BOOL:
 			return QVariant(VSE.getBool(val, fieldName, pos));
-		case ST_DATETIME:
+		case TC_DATETIME:
 			return QVariant(QDateTime::fromString(VSE.getTime(val, fieldName, pos), Qt::ISODate));
-		case ST_VARSTORAGE:
+		case TC_VARSTORAGE:
 			return QVariant(VSE.getVarStorage(val, fieldName, pos));
-		case ST_LIST:
+		case TC_LIST:
 			return QVariant(VSE.getListSelection(val, fieldName, pos));
-		case ST_INVALID:
+		case TC_CALLBACK:
+			return QVariant(VSE.getVarStorage(val, fieldName, pos));
+		case TC_IPADDR:
+		case TC_NULL:
 			qWarning() << "Unknown Type Requested from getValue(name): " << name << " Type: " << val->getType(fieldName.toStdString());
 			qWarning() << "fieldName: " << fieldName << ", Container: " << containerName << ", VarStorage: ";
 			val->printToStream();
@@ -914,28 +919,32 @@ qlonglong VarStorageHelper_t::getMax(QString name) {
 QVariant VarStorageHelper_t::getDefault(QString name) {
 	HashVals vals;
 	try {
-		if (this->descriptor->getHashValue(name.toStdString(), vals)) {
-			switch (boost::get<int>(vals["Type"])) {
-				case ST_STRING:
-				case ST_DATETIME:
+		switch (this->getRealType(name)) {
+				case TC_STRING:
+				case TC_DATETIME:
 					return QVariant((char *) boost::get<std::string>(vals["defaultstr"]).c_str());
-				case ST_INT:
-				case ST_LONG:
-				case ST_LONGLONG:
-				case ST_FLOAT:
-				case ST_BOOL:
-				case ST_LIST:
+				case TC_INT:
+				case TC_LONG:
+				case TC_LONGLONG:
+				case TC_FLOAT:
+				case TC_BOOL:
+				case TC_LIST:
 					return QVariant((long long) boost::get<long long>(vals["defaultnum"]));
-				case ST_HASH:
-				case ST_VARSTORAGE:
-				case ST_INVALID:
+				/* for Hash, VarStorage and Callback Types, return empty values */
+				case TC_HASH: {
+					HashVals vals;
+					return QVariant::fromValue<HashVals>(vals);
+				}
+				case TC_VARSTORAGE:
+				case TC_CALLBACK: {
+					VarContainerFactory(vals1);
+					return QVariant::fromValue<VarStorage>(vals1);
+				}
+				case TC_IPADDR:
+				case TC_NULL:
 					qWarning() << "Unsupported Type Requested from getDefault(name): " << name;
 					return QVariant();
 			}
-		} else {
-			qWarning() << name << " does not exist in Descriptors (getDescription())";
-			return QVariant();
-		}
 	} catch (std::exception &e) {
 		qWarning() << "Exception Caught in getDefault: " << e.what();
 	}
@@ -991,39 +1000,39 @@ VarStorage VarStorageHelper_t::setValue(VarStorage updateVals, QString field, QV
 	}
 
 	switch (this->getRealType(field)) {
-		case ST_STRING:
+		case TC_STRING:
 			updateVals->replaceStringValue(field.toStdString(), data.toString().toStdString(), pos);
 			break;
-		case ST_INT:
+		case TC_INT:
 			updateVals->replaceIntValue(field.toStdString(), data.toInt(), pos);
 			break;
-		case ST_LONG:
+		case TC_LONG:
 			updateVals->replaceLongValue(field.toStdString(), data.toLongLong(), pos);
 			break;
-		case ST_LONGLONG:
+		case TC_LONGLONG:
 			updateVals->replaceLongValue(field.toStdString(), data.toLongLong(), pos);
 			break;
-		case ST_FLOAT:
+		case TC_FLOAT:
 			updateVals->replaceFloatValue(field.toStdString(), data.toFloat(), pos);
 			break;
-		case ST_HASH:
+		case TC_HASH:
 			updateVals->replaceHashValue(field.toStdString(), data.value<HashVals>(), pos);
 			break;
-		case ST_BOOL:
+		case TC_BOOL:
 			updateVals->replaceBoolValue(field.toStdString(), data.toBool(), pos);
 			break;
-		case ST_DATETIME: {
+		case TC_DATETIME: {
 			boost::posix_time::ptime dt;
 			dt = boost::posix_time::from_iso_string(data.toDateTime().toString(Qt::ISODate).toStdString());
 			updateVals->replaceTimeValue(field.toStdString(), dt, pos);
 			break;
 		}
-		case ST_VARSTORAGE: {
+		case TC_VARSTORAGE: {
 			VarStorage vars = data.value<VarStorage>();
 			updateVals->replaceVarStorageValue(field.toStdString(), vars, pos);
 			break;
 		}
-		case ST_LIST: {
+		case TC_LIST: {
 			if (data.type() == QVariant::Int) {
 				updateVals->setListSelectedValue(field.toStdString(), data.toUInt(), pos);
 			} else if (data.userType() == QMetaType::type("VarList_t")) {
@@ -1031,7 +1040,13 @@ VarStorage VarStorageHelper_t::setValue(VarStorage updateVals, QString field, QV
 			}
 			break;
 		}
-		case ST_INVALID:
+		case TC_CALLBACK: {
+			VarStorage vars = data.value<VarStorage>();
+			updateVals->replaceVarStorageValue(field.toStdString(), vars, pos);
+			break;
+		}
+		case TC_NULL:
+		case TC_IPADDR:
 			qDebug() << " SetValue Called on a ST_INVALID Field";
 			break;
 	}
